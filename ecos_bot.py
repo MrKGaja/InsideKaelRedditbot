@@ -1,14 +1,12 @@
 import requests
 import time
-import json
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
+import xml.etree.ElementTree as ET
 
 # ─────────────────────────────────────────────
-# CONFIGURATION — only fill in Telegram details
+# CONFIGURATION
 # ─────────────────────────────────────────────
+
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
@@ -60,30 +58,45 @@ def send_telegram(message):
         "parse_mode": "Markdown",
     }
     try:
-        requests.post(url, data=payload, timeout=10)
+        r = requests.post(url, data=payload, timeout=10)
+        print(f"Telegram response: {r.status_code}")
     except Exception as e:
         print(f"Telegram error: {e}")
 
 # ─────────────────────────────────────────────
-# FETCH NEW POSTS FROM SUBREDDIT
+# FETCH NEW POSTS VIA RSS
 # ─────────────────────────────────────────────
 
-def fetch_new_posts(subreddit):
-    url = f"https://www.reddit.com/r/{subreddit}/new.json?limit=25"
+def fetch_rss(subreddit):
+    url = f"https://www.reddit.com/r/{subreddit}/new/.rss"
     headers = {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        "User-Agent": "Mozilla/5.0 (compatible; ECOSBot/1.0)"
     }
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        if response.status_code == 200:
-            data = response.json()
-            posts = data["data"]["children"]
-            return posts
-        else:
-            print(f"Status {response.status_code} for r/{subreddit}")
+        response = requests.get(url, headers=headers, timeout=15)
+        print(f"r/{subreddit} status: {response.status_code}")
+        if response.status_code != 200:
             return []
+        root = ET.fromstring(response.content)
+        namespace = {"atom": "http://www.w3.org/2005/Atom"}
+        entries = root.findall("atom:entry", namespace)
+        posts = []
+        for entry in entries:
+            post_id = entry.find("atom:id", namespace).text
+            title = entry.find("atom:title", namespace).text or ""
+            content_el = entry.find("atom:content", namespace)
+            content = content_el.text if content_el is not None else ""
+            link_el = entry.find("atom:link", namespace)
+            link = link_el.attrib.get("href", "") if link_el is not None else ""
+            posts.append({
+                "id": post_id,
+                "title": title,
+                "content": content,
+                "link": link
+            })
+        return posts
     except Exception as e:
-        print(f"Error fetching r/{subreddit}: {e}")
+        print(f"RSS error for r/{subreddit}: {e}")
         return []
 
 # ─────────────────────────────────────────────
@@ -97,39 +110,36 @@ def run_bot():
 
     while True:
         for subreddit in SUBREDDITS:
-            posts = fetch_new_posts(subreddit)
+            posts = fetch_rss(subreddit)
+            print(f"r/{subreddit}: {len(posts)} posts fetched")
 
             for post in posts:
-                post_data = post["data"]
-                post_id = post_data["id"]
+                post_id = post["id"]
 
                 if post_id in seen_ids:
                     continue
                 seen_ids.add(post_id)
 
-                title = post_data.get("title", "").lower()
-                body = post_data.get("selftext", "").lower()
-                combined = title + " " + body
+                combined = (post["title"] + " " + post["content"]).lower()
 
                 for keyword in KEYWORDS:
                     if keyword.lower() in combined:
-                        link = f"https://reddit.com{post_data['permalink']}"
                         message = (
                             f"🎯 *ECOS Match!*\n\n"
                             f"*Subreddit:* r/{subreddit}\n"
-                            f"*Title:* {post_data['title']}\n\n"
+                            f"*Title:* {post['title']}\n\n"
                             f"*Matched:* `{keyword}`\n\n"
-                            f"*Link:* {link}\n\n"
+                            f"*Link:* {post['link']}\n\n"
                             f"👉 Respond as Koushik. Be genuine first. Share ECOS only if it feels right."
                         )
-                        print(f"✅ Match in r/{subreddit}: {post_data['title']}")
+                        print(f"✅ Match in r/{subreddit}: {post['title']}")
                         send_telegram(message)
                         break
 
-            time.sleep(2)  # be polite between subreddit requests
+            time.sleep(3)
 
         print("⏳ Sleeping 5 minutes before next check...")
-        time.sleep(300)  # check every 5 minutes
+        time.sleep(300)
 
 if __name__ == "__main__":
     run_bot()
