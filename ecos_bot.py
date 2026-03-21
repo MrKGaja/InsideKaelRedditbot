@@ -1,13 +1,16 @@
 import requests
 import time
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # ─────────────────────────────────────────────
 # CONFIGURATION — only fill in Telegram details
 # ─────────────────────────────────────────────
-
-TELEGRAM_BOT_TOKEN = "8763686095:AAGePhddKT28ZFKEPYZN9P1HinaItyH3i7Y"
-TELEGRAM_CHAT_ID   = "7296826123"
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
 # ─────────────────────────────────────────────
 # SUBREDDITS TO MONITOR
