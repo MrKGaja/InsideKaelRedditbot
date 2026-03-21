@@ -53,6 +53,34 @@ KEYWORDS = [
     "feel empty but don't know why",
     "feel lost but can't explain",
     "can't get out of my head",
+
+    # Relationship loops
+"can't stop thinking about",
+"keep analyzing",
+"can't detach",
+"can't stop caring",
+"how do i stop caring",
+"can't move on",
+"keep going back to",
+"breadcrumbs",
+"i want to detach",
+
+# Carrying others
+"i'm always the therapist",
+"people treat me like their therapist",
+"everyone comes to me",
+"i'm tired of being the strong one",
+"no one is there for me",
+"i give so much",
+
+# Self awareness but still stuck
+"i know what i should do but",
+"i know better but",
+"i understand it but still",
+"logically i know but",
+"i've done the work but",
+"even after therapy",
+"even after healing",
 ]
 
 def send_telegram(message):
