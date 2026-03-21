@@ -9,7 +9,6 @@ TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 SUBREDDITS = ["emotionalintelligence","INFJ","selfimprovement","therapy","mentalhealth","anxiety"]
 
 KEYWORDS = [
-    # Can't name the feeling
     "can't name what i'm feeling",
     "don't know what i feel",
     "can't explain my emotions",
@@ -21,16 +20,12 @@ KEYWORDS = [
     "can't pinpoint",
     "something feels off",
     "don't know what's wrong with me",
-
-    # Going in circles
     "going in circles",
     "stuck in my feelings",
     "can't get to the root",
     "keep looping",
     "same patterns",
     "can't move forward",
-
-    # Unheard and unseen
     "feeling unheard",
     "no one notices",
     "no one asks how i'm doing",
@@ -39,8 +34,6 @@ KEYWORDS = [
     "no one bothers",
     "left feeling misunderstood",
     "deeply rejected",
-
-    # Pretending
     "i pretend i'm okay",
     "pretend to be happy",
     "pretend nothing is wrong",
@@ -48,8 +41,6 @@ KEYWORDS = [
     "i'm barely surviving",
     "i'm falling apart",
     "slowly dying inside",
-
-    # Carrying too much
     "carry everyone's emotions",
     "everyone's therapist",
     "tired of being strong",
@@ -57,8 +48,6 @@ KEYWORDS = [
     "tired of carrying",
     "i just want someone to",
     "numb but don't know why",
-
-    # Lost and confused
     "something is wrong but i don't know",
     "i don't feel like myself",
     "feel empty but don't know why",
@@ -69,7 +58,8 @@ KEYWORDS = [
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     try:
-        requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}, timeout=10)
+        r = requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message}, timeout=10)
+        print(f"Telegram status: {r.status_code}")
     except Exception as e:
         print(f"Telegram error: {e}")
 
@@ -99,8 +89,8 @@ def fetch_rss(subreddit):
 
 def run_bot():
     seen_ids = set()
-    print("🟢 ECOS bot started...")
-    send_telegram("🟢 ECOS bot is live. Watching Reddit for your people...")
+    print("ECOS bot started...")
+    send_telegram("ECOS bot is live. Watching Reddit for your people...")
     while True:
         for subreddit in SUBREDDITS:
             posts = fetch_rss(subreddit)
@@ -112,12 +102,20 @@ def run_bot():
                 combined = (post["title"] + " " + post["content"]).lower()
                 for keyword in KEYWORDS:
                     if keyword.lower() in combined:
-                        send_telegram(f"🎯 *ECOS Match!*\n\n*Subreddit:* r/{subreddit}\n*Title:* {post['title']}\n\n*Matched:* `{keyword}`\n\n*Link:* {post['link']}\n\n👉 Respond as Koushik. Be genuine first. Share ECOS only if it feels right.")
-                        print(f"✅ Match: {post['title']}")
+                        message = (
+                            f"ECOS Match!\n\n"
+                            f"Subreddit: r/{subreddit}\n"
+                            f"Title: {post['title']}\n\n"
+                            f"Matched: {keyword}\n\n"
+                            f"Link: {post['link']}\n\n"
+                            f"Respond as Koushik. Be genuine first. Share ECOS only if it feels right."
+                        )
+                        send_telegram(message)
+                        print(f"Match sent: {post['title']}")
                         break
             time.sleep(3)
-        send_telegram("👀 Checked all subreddits. No matches yet. Checking again in 5 mins...")
-        print("⏳ Sleeping 5 minutes...")
+        send_telegram("Checked all subreddits. Sleeping 5 mins...")
+        print("Sleeping 5 minutes...")
         time.sleep(300)
 
 if __name__ == "__main__":
