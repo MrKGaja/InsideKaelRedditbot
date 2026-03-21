@@ -8,7 +8,63 @@ TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
 SUBREDDITS = ["emotionalintelligence","INFJ","selfimprovement","therapy","mentalhealth","anxiety"]
 
-KEYWORDS = ["can't name what i'm feeling","don't know what i feel","can't explain my emotions","going in circles","something feels off","numb but don't know why","can't identify my emotion","don't know why i feel this way","can't figure out what i'm feeling","feeling something but can't name it","emotionally confused","can't pinpoint","stuck in my feelings","can't get to the root","don't know what's wrong with me"]
+KEYWORDS = [
+    # Can't name the feeling
+    "can't name what i'm feeling",
+    "don't know what i feel",
+    "can't explain my emotions",
+    "can't identify my emotion",
+    "can't figure out what i'm feeling",
+    "feeling something but can't name it",
+    "don't know why i feel this way",
+    "emotionally confused",
+    "can't pinpoint",
+    "something feels off",
+    "don't know what's wrong with me",
+
+    # Going in circles
+    "going in circles",
+    "stuck in my feelings",
+    "can't get to the root",
+    "keep looping",
+    "same patterns",
+    "can't move forward",
+
+    # Unheard and unseen
+    "feeling unheard",
+    "no one notices",
+    "no one asks how i'm doing",
+    "no one checks on me",
+    "i'm always the one who",
+    "no one bothers",
+    "left feeling misunderstood",
+    "deeply rejected",
+
+    # Pretending
+    "i pretend i'm okay",
+    "pretend to be happy",
+    "pretend nothing is wrong",
+    "i'm not really okay",
+    "i'm barely surviving",
+    "i'm falling apart",
+    "slowly dying inside",
+
+    # Carrying too much
+    "carry everyone's emotions",
+    "everyone's therapist",
+    "tired of being strong",
+    "tired of everything",
+    "tired of carrying",
+    "i just want someone to",
+    "numb but don't know why",
+
+    # Lost and confused
+    "something is wrong but i don't know",
+    "i don't feel like myself",
+    "feel empty but don't know why",
+    "feel lost but can't explain",
+    "can't get out of my head",
+]
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
