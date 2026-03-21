@@ -1,129 +1,68 @@
 import requests
 import time
-import json
 import os
-from dotenv import load_dotenv
+import xml.etree.ElementTree as ET
 
-load_dotenv()
-
-# ─────────────────────────────────────────────
-# CONFIGURATION — only fill in Telegram details
-# ─────────────────────────────────────────────
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
-# ─────────────────────────────────────────────
-# SUBREDDITS TO MONITOR
-# ─────────────────────────────────────────────
+SUBREDDITS = ["emotionalintelligence","INFJ","selfimprovement","therapy","mentalhealth","anxiety"]
 
-SUBREDDITS = [
-    "emotionalintelligence",
-    "INFJ",
-    "selfimprovement",
-    "therapy",
-    "mentalhealth",
-    "anxiety",
-]
-
-# ─────────────────────────────────────────────
-# KEYWORDS TO WATCH FOR
-# ─────────────────────────────────────────────
-
-KEYWORDS = [
-    "can't name what i'm feeling",
-    "don't know what i feel",
-    "can't explain my emotions",
-    "going in circles",
-    "something feels off",
-    "numb but don't know why",
-    "can't identify my emotion",
-    "don't know why i feel this way",
-    "can't figure out what i'm feeling",
-    "feeling something but can't name it",
-    "emotionally confused",
-    "can't pinpoint",
-    "stuck in my feelings",
-    "can't get to the root",
-    "don't know what's wrong with me",
-    "something is wrong but i don't know",
-]
-
-# ─────────────────────────────────────────────
-# SEND TELEGRAM ALERT
-# ─────────────────────────────────────────────
+KEYWORDS = ["can't name what i'm feeling","don't know what i feel","can't explain my emotions","going in circles","something feels off","numb but don't know why","can't identify my emotion","don't know why i feel this way","can't figure out what i'm feeling","feeling something but can't name it","emotionally confused","can't pinpoint","stuck in my feelings","can't get to the root","don't know what's wrong with me"]
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "Markdown",
-    }
     try:
-        requests.post(url, data=payload, timeout=10)
+        requests.post(url, data={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "Markdown"}, timeout=10)
     except Exception as e:
         print(f"Telegram error: {e}")
 
-# ─────────────────────────────────────────────
-# FETCH NEW POSTS FROM SUBREDDIT
-# ─────────────────────────────────────────────
-
-def fetch_new_posts(subreddit):
-    url = f"https://www.reddit.com/r/{subreddit}/new.json?limit=25"
-    headers = {"User-Agent": "ecos_bot/1.0"}
+def fetch_rss(subreddit):
+    url = f"https://www.reddit.com/r/{subreddit}/new/.rss"
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; ECOSBot/1.0)"}
     try:
-        response = requests.get(url, headers=headers, timeout=10)
-        data = response.json()
-        posts = data["data"]["children"]
+        response = requests.get(url, headers=headers, timeout=15)
+        print(f"r/{subreddit} status: {response.status_code}")
+        if response.status_code != 200:
+            return []
+        root = ET.fromstring(response.content)
+        ns = {"atom": "http://www.w3.org/2005/Atom"\}
+        entries = root.findall("atom:entry", ns)
+        posts = []
+        for entry in entries:
+            posts.append({
+                "id": entry.find("atom:id", ns).text,
+                "title": (entry.find("atom:title", ns).text or ""),
+                "content": (entry.find("atom:content", ns).text or "" if entry.find("atom:content", ns) is not None else ""),
+                "link": (entry.find("atom:link", ns).attrib.get("href","") if entry.find("atom:link", ns) is not None else "")
+            })
         return posts
     except Exception as e:
-        print(f"Error fetching r/{subreddit}: {e}")
+        print(f"RSS error for r/{subreddit}: {e}")
         return []
-
-# ─────────────────────────────────────────────
-# MAIN BOT LOOP
-# ─────────────────────────────────────────────
 
 def run_bot():
     seen_ids = set()
     print("🟢 ECOS bot started...")
     send_telegram("🟢 ECOS bot is live. Watching Reddit for your people...")
-
     while True:
         for subreddit in SUBREDDITS:
-            posts = fetch_new_posts(subreddit)
-
+            posts = fetch_rss(subreddit)
+            print(f"r/{subreddit}: {len(posts)} posts fetched")
             for post in posts:
-                post_data = post["data"]
-                post_id = post_data["id"]
-
-                if post_id in seen_ids:
+                if post["id"] in seen_ids:
                     continue
-                seen_ids.add(post_id)
-
-                title = post_data.get("title", "").lower()
-                body = post_data.get("selftext", "").lower()
-                combined = title + " " + body
-
+                seen_ids.add(post["id"])
+                combined = (post["title"] + " " + post["content"]).lower()
                 for keyword in KEYWORDS:
                     if keyword.lower() in combined:
-                        link = f"https://reddit.com{post_data['permalink']}"
-                        message = (
-                            f"🎯 *ECOS Match!*\n\n"
-                            f"*Subreddit:* r/{subreddit}\n"
-                            f"*Title:* {post_data['title']}\n\n"
-                            f"*Matched:* `{keyword}`\n\n"
-                            f"*Link:* {link}\n\n"
-                            f"👉 Respond as Koushik. Be genuine first. Share ECOS only if it feels right."
-                        )
-                        print(f"✅ Match in r/{subreddit}: {post_data['title']}")
-                        send_telegram(message)
+                        send_telegram(f"🎯 *ECOS Match!*\n\n*Subreddit:* r/{subreddit}\n*Title:* {post['title']}\n\n*Matched:* `{keyword}`\n\n*Link:* {post['link']}\n\n👉 Respond as Koushik. Be genuine first. Share ECOS only if it feels right.")
+                        print(f"✅ Match: {post['title']}")
                         break
-
-            time.sleep(2)  # be polite between subreddit requests
-
-        print("⏳ Sleeping 5 minutes before next check...")
-        time.sleep(300)  # check every 5 minutes
+            time.sleep(3)
+        send_telegram("👀 Checked all subreddits. No matches yet. Checking again in 5 mins...")
+        print("⏳ Sleeping 5 minutes...")
+        time.sleep(300)
 
 if __name__ == "__main__":
     run_bot()
