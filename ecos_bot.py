@@ -138,6 +138,8 @@ def run_bot():
 
             time.sleep(3)
 
+        summary = f"👀 Checked all subreddits. No matches yet. Sleeping 5 minutes..."
+        send_telegram(summary)
         print("⏳ Sleeping 5 minutes before next check...")
         time.sleep(300)
 
