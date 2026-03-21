@@ -26,7 +26,7 @@ def fetch_rss(subreddit):
         if response.status_code != 200:
             return []
         root = ET.fromstring(response.content)
-        ns = {"atom": "http://www.w3.org/2005/Atom"\}
+        ns = {"atom": "http://www.w3.org/2005/Atom"}
         entries = root.findall("atom:entry", ns)
         posts = []
         for entry in entries:
