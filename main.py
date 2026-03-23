@@ -101,9 +101,7 @@ KEYWORDS = [
 "feel like a child",
 
 # HSP related
-"highly sensitive",
 "too sensitive",
-"feel everything so deeply",
 "overwhelmed by emotions",
 "can't stop feeling",
 ]
