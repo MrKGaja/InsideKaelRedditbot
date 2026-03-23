@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID")
 
-SUBREDDITS = ["emotionalintelligence","INFJ","selfimprovement","therapy","mentalhealth","anxiety"]
+SUBREDDITS = ["emotionalintelligence","INFJ","selfimprovement","therapy","mentalhealth","anxiety", "hsp"]
 
 KEYWORDS = [
     "can't name what i'm feeling",
@@ -81,6 +81,31 @@ KEYWORDS = [
 "i've done the work but",
 "even after therapy",
 "even after healing",
+
+# Low EQ / can't explain feelings
+"low eq",
+"low emotional intelligence",
+"can't explain what i'm feeling",
+"can't articulate my feelings",
+"don't know what i'm feeling",
+"struggle to identify my feelings",
+"emotionally unavailable",
+"don't understand my emotions",
+
+# Relationship emotional patterns  
+"i don't understand why i",
+"i hurt someone and don't know why",
+"she said i was being",
+"he said i was being",
+"i cried and didn't know why",
+"feel like a child",
+
+# HSP related
+"highly sensitive",
+"too sensitive",
+"feel everything so deeply",
+"overwhelmed by emotions",
+"can't stop feeling",
 ]
 
 def send_telegram(message):
